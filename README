@@ -1,0 +1,30 @@
+# dnsserver
+
+Dummy, quick and dirty, DNS server I use for my dev of HAProxy's DNS runtime resolver.
+
+# build
+
+```
+make build
+```
+
+# run
+
+```
+./dnsserver
+```
+
+# Use
+
+Update the go source file accordingly to your needs, build it, then run it.
+
+Simply point your HAProxy (or client) to this daemon:
+
+```
+resolvers dnsserver
+  nameserver dnsserver 127.0.0.1:5300
+```
+
+# Greetings
+
+Code deeply inspired by https://gist.github.com/walm/0d67b4fb2d5daf3edd4fad3e13b162cb
