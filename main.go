@@ -16,6 +16,8 @@ var port int = 5300
 var records = map[string]string{
 	"A1.tld.": "192.168.0.1",
 	"A2.tld.": "192.168.0.2",
+	"A3.tld.": "192.168.0.3",
+	"A4.tld.": "192.168.0.4",
 }
 type srvRecord struct {
 	Priority string
@@ -24,7 +26,12 @@ type srvRecord struct {
 	Target string
 }
 var srvrecords = map[string][]srvRecord{
-	"_http._tcp.srv.tld.": []srvRecord{ {"5", "500", "80", "A1.tld."}, {"5", "500", "80", "A2.tld."},  },
+	"_http._tcp.srv.tld.": []srvRecord{
+		{"5", "500", "80", "A1.tld."},
+		{"5", "500", "80", "A2.tld."},
+		{"5", "500", "80", "A3.tld."},
+		{"5", "500", "80", "A4.tld."},
+	},
 }
 
 func parseQuery(m *dns.Msg) {
