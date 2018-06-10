@@ -29,7 +29,7 @@ var srvrecords = map[string][]srvRecord{
 
 func parseQuery(m *dns.Msg) {
 	for _, q := range m.Question {
-		log.Printf("Query for %s\n", q.Name)
+		log.Printf("Query %d for %s\n", m.Id, q.Name)
 		switch q.Qtype {
 		case dns.TypeA:
 			ip := records[q.Name]
