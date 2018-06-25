@@ -5,7 +5,9 @@ package main
 import (
 	"fmt"
 	"log"
+	"math/rand"
 	"strconv"
+	"time"
 
 	"github.com/miekg/dns"
 )
@@ -38,6 +40,20 @@ var srvRecordList = map[string]SrvRecordList{
 	},
 }
 
+func (self SrvRecordList) Randomize() (out SrvRecordList) {
+	if len(self) == 0 {
+		return SrvRecordList{}
+	}
+
+	r := rand.New(rand.NewSource(time.Now().Unix()))
+	out = make([]srvRecord, len(self))
+	perm := r.Perm(len(self))
+	for i, randIndex := range perm {
+		out[i] = self[randIndex]
+	}
+	return out
+}
+
 func parseQuery(m *dns.Msg) {
 	for _, q := range m.Question {
 		log.Printf("Query %d for %s\n", m.Id, q.Name)
@@ -56,7 +72,7 @@ func parseQuery(m *dns.Msg) {
 				goto out
 			}
 
-			for _, srv := range srvs {
+			for _, srv := range srvs.Randomize() {
 				if srv.Target != "" {
 					rr, err := dns.NewRR(fmt.Sprintf("%s IN SRV %s %s %s %s", q.Name, srv.Priority, srv.Weight, srv.Port, srv.Target))
 					if err == nil {
