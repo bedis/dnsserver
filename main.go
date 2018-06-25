@@ -13,7 +13,7 @@ import (
 var domain string = "tld."
 var port int = 5300
 
-var records = map[string]string{
+var recordList = map[string]string{
 	"A1.tld.": "192.168.0.1",
 	"A2.tld.": "192.168.0.2",
 	"A3.tld.": "192.168.0.3",
@@ -25,7 +25,7 @@ type srvRecord struct {
 	Port string
 	Target string
 }
-var srvrecords = map[string][]srvRecord{
+var srvRecordList = map[string][]srvRecord{
 	"_http._tcp.srv.tld.": []srvRecord{
 		{"5", "500", "80", "A1.tld."},
 		{"5", "500", "80", "A2.tld."},
@@ -39,7 +39,7 @@ func parseQuery(m *dns.Msg) {
 		log.Printf("Query %d for %s\n", m.Id, q.Name)
 		switch q.Qtype {
 		case dns.TypeA:
-			ip := records[q.Name]
+			ip := recordList[q.Name]
 			if ip != "" {
 				rr, err := dns.NewRR(fmt.Sprintf("%s A %s", q.Name, ip))
 				if err == nil {
@@ -47,7 +47,7 @@ func parseQuery(m *dns.Msg) {
 				}
 			}
 		case dns.TypeSRV:
-			srvs := srvrecords[q.Name]
+			srvs := srvRecordList[q.Name]
 			if len(srvs) < 1 {
 				goto out
 			}
@@ -58,7 +58,7 @@ func parseQuery(m *dns.Msg) {
 					if err == nil {
 						m.Answer = append(m.Answer, rr)
 					}
-					ip := records[srv.Target]
+					ip := recordList[srv.Target]
 					rr, err = dns.NewRR(fmt.Sprintf("%s A %s", srv.Target, ip))
 					if err == nil {
 						m.Extra = append(m.Extra, rr)
