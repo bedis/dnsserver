@@ -10,23 +10,27 @@ import (
 	"github.com/miekg/dns"
 )
 
-var domain string = "tld."
-var port int = 5300
-
-var recordList = map[string]string{
-	"A1.tld.": "192.168.0.1",
-	"A2.tld.": "192.168.0.2",
-	"A3.tld.": "192.168.0.3",
-	"A4.tld.": "192.168.0.4",
-}
+type Record string
+type RecordList map[string]Record
 type srvRecord struct {
 	Priority string
 	Weight string
 	Port string
 	Target string
 }
-var srvRecordList = map[string][]srvRecord{
-	"_http._tcp.srv.tld.": []srvRecord{
+type SrvRecordList []srvRecord
+
+
+var domain string = "tld."
+var port int = 5300
+var recordList RecordList = RecordList{
+	"A1.tld.": "192.168.0.1",
+	"A2.tld.": "192.168.0.2",
+	"A3.tld.": "192.168.0.3",
+	"A4.tld.": "192.168.0.4",
+}
+var srvRecordList = map[string]SrvRecordList{
+	"_http._tcp.srv.tld.": SrvRecordList{
 		{"5", "500", "80", "A1.tld."},
 		{"5", "500", "80", "A2.tld."},
 		{"5", "500", "80", "A3.tld."},
