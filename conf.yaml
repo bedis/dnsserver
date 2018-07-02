@@ -1,0 +1,16 @@
+--- 
+debug: true
+domain: "tld."
+port: 5300
+srv:
+  _http._tcp.srv.tld.:
+  - { priority:  5, weight: 500, port: 80, target: A1.tld. }
+  - { priority:  5, weight: 500, port: 80, target: A2.tld. }
+  - { priority:  5, weight: 500, port: 80, target: A3.tld. }
+  - { priority:  5, weight: 500, port: 80, target: A4.tld. }
+A:
+  A1.tld.: 192.168.0.1
+  A2.tld.: 192.168.0.2
+  A3.tld.: 192.168.0.3
+  A4.tld.: 192.168.0.4
+

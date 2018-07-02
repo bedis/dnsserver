@@ -4,41 +4,34 @@ package main
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"math/rand"
 	"strconv"
 	"time"
 
 	"github.com/miekg/dns"
+	"gopkg.in/yaml.v2"
 )
 
 type Record string
 type RecordList map[string]Record
 type srvRecord struct {
-	Priority string
-	Weight string
-	Port string
-	Target string
+	Priority string   `yaml:"priority"`
+	Weight string     `yaml:"weight"`
+	Port string       `yaml:"port"`
+	Target string     `yaml:"target"`
 }
 type SrvRecordList []srvRecord
 
+type conf struct {
+	Debug bool                   `yaml:"debug"`
+	Domain string                `yaml:"domain"`
+	Port int                     `yaml:"port"`
+	Srv map[string]SrvRecordList `yaml:"srv"`
+	A map[string]string          `yaml:"A"`
+}
 
-var domain string = "tld."
-var port int = 5300
-var recordList RecordList = RecordList{
-	"A1.tld.": "192.168.0.1",
-	"A2.tld.": "192.168.0.2",
-	"A3.tld.": "192.168.0.3",
-	"A4.tld.": "192.168.0.4",
-}
-var srvRecordList = map[string]SrvRecordList{
-	"_http._tcp.srv.tld.": SrvRecordList{
-		{"5", "500", "80", "A1.tld."},
-		{"5", "500", "80", "A2.tld."},
-		{"5", "500", "80", "A3.tld."},
-		{"5", "500", "80", "A4.tld."},
-	},
-}
 
 func (self SrvRecordList) Randomize() (out SrvRecordList) {
 	if len(self) == 0 {
@@ -54,12 +47,12 @@ func (self SrvRecordList) Randomize() (out SrvRecordList) {
 	return out
 }
 
-func parseQuery(m *dns.Msg) {
+func parseQuery(m *dns.Msg, c *conf) {
 	for _, q := range m.Question {
 		log.Printf("Query %d for %s\n", m.Id, q.Name)
 		switch q.Qtype {
 		case dns.TypeA:
-			ip := recordList[q.Name]
+			ip := c.A[q.Name]
 			if ip != "" {
 				rr, err := dns.NewRR(fmt.Sprintf("%s A %s", q.Name, ip))
 				if err == nil {
@@ -67,7 +60,7 @@ func parseQuery(m *dns.Msg) {
 				}
 			}
 		case dns.TypeSRV:
-			srvs := srvRecordList[q.Name]
+			srvs := c.Srv[q.Name]
 			if len(srvs) < 1 {
 				goto out
 			}
@@ -78,7 +71,7 @@ func parseQuery(m *dns.Msg) {
 					if err == nil {
 						m.Answer = append(m.Answer, rr)
 					}
-					ip := recordList[srv.Target]
+					ip := c.A[srv.Target]
 					rr, err = dns.NewRR(fmt.Sprintf("%s A %s", srv.Target, ip))
 					if err == nil {
 						m.Extra = append(m.Extra, rr)
@@ -93,26 +86,46 @@ func parseQuery(m *dns.Msg) {
 	return
 }
 
-func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg) {
+func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg, c *conf) {
 	m := new(dns.Msg)
 	m.SetReply(r)
 	m.Compress = false
 
 	switch r.Opcode {
 	case dns.OpcodeQuery:
-		parseQuery(m)
+		parseQuery(m, c)
 	}
 
 	w.WriteMsg(m)
 }
 
+func (c *conf) loadConf() (*conf) {
+	// load conf file
+	yamlFile, err := ioutil.ReadFile("conf.yaml")
+	if err != nil {
+		log.Printf("yamlFile.Get err   #%v ", err)
+	}
+	err = yaml.Unmarshal(yamlFile, c)
+	if err != nil {
+		log.Fatalf("Unmarshal: %v", err)
+	}
+
+	return c
+}
+
 func main() {
+	var c conf
+	c.loadConf()
+	if (c.Debug) {
+		fmt.Printf("%#v\n", c)
+	}
+
 	// attach request handler func
-	dns.HandleFunc(domain, handleDnsRequest)
+	dns.HandleFunc(c.Domain, func(w dns.ResponseWriter, r *dns.Msg) {handleDnsRequest(w, r, &c)} )
 
 	// start server
-	server := &dns.Server{Addr: ":" + strconv.Itoa(port), Net: "udp"}
-	log.Printf("Starting at %d\n", port)
+	server := &dns.Server{Addr: ":" + strconv.Itoa(c.Port), Net: "udp"}
+	log.Printf("Starting at %d\n", c.Port)
 	err := server.ListenAndServe()
 	defer server.Shutdown()
 	if err != nil {
