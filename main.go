@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"time"
 
+	"github.com/fsnotify/fsnotify"
 	"github.com/miekg/dns"
 	"gopkg.in/yaml.v2"
 )
@@ -58,10 +59,14 @@ func parseQuery(m *dns.Msg, c *conf) {
 				if err == nil {
 					m.Answer = append(m.Answer, rr)
 				}
+			} else {
+				m.SetRcode(m, dns.RcodeNameError)
+				goto out
 			}
 		case dns.TypeSRV:
 			srvs := c.Srv[q.Name]
 			if len(srvs) < 1 {
+				m.SetRcode(m, dns.RcodeNameError)
 				goto out
 			}
 
@@ -101,7 +106,7 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg, c *conf) {
 
 func (c *conf) loadConf() (*conf) {
 	// load conf file
-	yamlFile, err := ioutil.ReadFile("conf.yaml")
+	yamlFile, err := ioutil.ReadFile("conf/conf.yaml")
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
 	}
@@ -113,22 +118,62 @@ func (c *conf) loadConf() (*conf) {
 	return c
 }
 
-func main() {
-	var c conf
+var c conf
+
+func init() {
 	c.loadConf()
 	if (c.Debug) {
 		fmt.Printf("%#v\n", c)
 	}
 
+}
+
+func main() {
 	// attach request handler func
 	dns.HandleFunc(c.Domain, func(w dns.ResponseWriter, r *dns.Msg) {handleDnsRequest(w, r, &c)} )
 
 	// start server
 	server := &dns.Server{Addr: ":" + strconv.Itoa(c.Port), Net: "udp"}
 	log.Printf("Starting at %d\n", c.Port)
-	err := server.ListenAndServe()
+	var err error
+	go func() {
+		err = server.ListenAndServe()
+	}()
 	defer server.Shutdown()
 	if err != nil {
 		log.Fatalf("Failed to start server: %s\n ", err.Error())
 	}
+
+	watcher, err := fsnotify.NewWatcher()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer watcher.Close()
+
+	done := make(chan bool)
+	go func() {
+		for {
+			select {
+			case event := <-watcher.Events:
+				//if c.Debug {
+				//	log.Println("Event %s for file %s", event, event.Name)
+				//}
+				if event.Name == "conf/conf.yaml" && event.Op&fsnotify.Write == fsnotify.Write {
+					c.loadConf()
+					if (c.Debug) {
+						fmt.Printf("%#v\n", c)
+					}
+					log.Println("Reloaded")
+				}
+			case err := <-watcher.Errors:
+				log.Println("error:", err)
+			}
+		}
+	}()
+
+	err = watcher.Add("conf/")
+	if err != nil {
+		log.Fatal(err)
+	}
+	<-done
 }
