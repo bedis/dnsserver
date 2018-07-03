@@ -3,7 +3,21 @@ debug: true
 domain: "tld."
 port: 5300
 srv:
-  _http._tcp.srv.tld.:
+  _http._tcp.be1.tld.:
+  - { priority:  5, weight: 500, port: 80, target: A1.tld. }
+  - { priority:  5, weight: 500, port: 80, target: A2.tld. }
+  - { priority:  5, weight: 500, port: 80, target: A3.tld. }
+  - { priority:  5, weight: 500, port: 80, target: A4.tld. }
+  - { priority:  5, weight: 500, port: 80, target: A5.tld. }
+  - { priority:  5, weight: 500, port: 80, target: A6.tld. }
+  - { priority:  5, weight: 500, port: 80, target: A7.tld. }
+  - { priority:  5, weight: 500, port: 80, target: A8.tld. }
+  _http._tcp.be2.tld.:
+  - { priority:  5, weight: 500, port: 80, target: A1.tld. }
+  - { priority:  5, weight: 500, port: 80, target: A2.tld. }
+  - { priority:  5, weight: 500, port: 80, target: A3.tld. }
+  - { priority:  5, weight: 500, port: 80, target: A4.tld. }
+  _http._tcp.be3.tld.:
   - { priority:  5, weight: 500, port: 80, target: A1.tld. }
   - { priority:  5, weight: 500, port: 80, target: A2.tld. }
   - { priority:  5, weight: 500, port: 80, target: A3.tld. }
@@ -13,4 +27,8 @@ A:
   A2.tld.: 192.168.0.2
   A3.tld.: 192.168.0.3
   A4.tld.: 192.168.0.4
+  A5.tld.: 192.168.0.5
+  A6.tld.: 192.168.0.6
+  A7.tld.: 192.168.0.7
+  A8.tld.: 192.168.0.8
 
