@@ -8,6 +8,7 @@ import (
 	"log"
 	"math/rand"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/fsnotify/fsnotify"
@@ -53,11 +54,14 @@ func parseQuery(m *dns.Msg, c *conf) {
 		log.Printf("Query %d for %s\n", m.Id, q.Name)
 		switch q.Qtype {
 		case dns.TypeA:
-			ip := c.A[q.Name]
-			if ip != "" {
-				rr, err := dns.NewRR(fmt.Sprintf("%s A %s", q.Name, ip))
-				if err == nil {
-					m.Answer = append(m.Answer, rr)
+			ips := strings.Fields(c.A[q.Name])
+			log.Printf("IP: %+v\n", ips);
+			if len(ips) > 0 {
+				for _, ip := range ips {
+					rr, err := dns.NewRR(fmt.Sprintf("%s A %s", q.Name, ip))
+					if err == nil {
+						m.Answer = append(m.Answer, rr)
+					}
 				}
 			} else {
 				m.SetRcode(m, dns.RcodeNameError)
