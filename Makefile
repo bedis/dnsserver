@@ -1,8 +1,8 @@
 build:
-	GOPATH=$$PWD go build
+	go build
 
 get:
-	GOPATH=$$PWD go get
+	go get
 
 clean:
 	rm -f dnsserver
