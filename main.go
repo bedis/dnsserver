@@ -16,6 +16,10 @@ import (
 	"gopkg.in/yaml.v2"
 )
 
+const (
+	defaultTtl = 3600
+)
+
 type Record string
 type RecordList map[string]Record
 type srvRecord struct {
@@ -30,6 +34,7 @@ type conf struct {
 	Debug bool                   `yaml:"debug"`
 	Domain string                `yaml:"domain"`
 	Port int                     `yaml:"port"`
+	Ttl uint32                   `yaml:"ttl"`
 	Srv map[string]SrvRecordList `yaml:"srv"`
 	A map[string]string          `yaml:"A"`
 }
@@ -59,6 +64,7 @@ func parseQuery(m *dns.Msg, c *conf) {
 			if len(ips) > 0 {
 				for _, ip := range ips {
 					rr, err := dns.NewRR(fmt.Sprintf("%s A %s", q.Name, ip))
+					rr.Header().Ttl = c.Ttl
 					if err == nil {
 						m.Answer = append(m.Answer, rr)
 					}
@@ -110,6 +116,7 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg, c *conf) {
 
 func (c *conf) loadConf() (*conf) {
 	// load conf file
+	c.Ttl = 0
 	yamlFile, err := ioutil.ReadFile("conf/conf.yaml")
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
@@ -117,6 +124,10 @@ func (c *conf) loadConf() (*conf) {
 	err = yaml.Unmarshal(yamlFile, c)
 	if err != nil {
 		log.Fatalf("Unmarshal: %v", err)
+	}
+
+	if c.Ttl == 0 {
+		c.Ttl = defaultTtl
 	}
 
 	return c
