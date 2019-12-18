@@ -18,6 +18,7 @@ import (
 
 const (
 	defaultTtl = 3600
+	nbChaosErrors = 2
 )
 
 type Record string
@@ -35,6 +36,7 @@ type conf struct {
 	Domain string                `yaml:"domain"`
 	Port int                     `yaml:"port"`
 	Ttl uint32                   `yaml:"ttl"`
+	Chaos int                    `yaml:"chaos"`
 	Srv map[string]SrvRecordList `yaml:"srv"`
 	A map[string]string          `yaml:"A"`
 }
@@ -55,10 +57,24 @@ func (self SrvRecordList) Randomize() (out SrvRecordList) {
 }
 
 func parseQuery(m *dns.Msg, c *conf) {
+	// adding some chaos errors
+	if c.Chaos > 0 {
+		if rand.Intn(100 * nbChaosErrors) <= c.Chaos {
+			log.Printf("[CHAOS]: query ignored\n")
+			return
+		}
+	}
 	for _, q := range m.Question {
 		log.Printf("Query %d for %s\n", m.Id, q.Name)
 		switch q.Qtype {
 		case dns.TypeA:
+			// adding some chaos errors
+			if c.Chaos > 0 {
+				if rand.Intn(100 * nbChaosErrors) <= c.Chaos {
+					log.Printf("[CHAOS]: delay added before processing the query (10s)\n")
+					time.Sleep(10 * time.Second)
+				}
+			}
 			ips := strings.Fields(c.A[q.Name])
 			log.Printf("IP: %+v\n", ips);
 			if len(ips) > 0 {
@@ -141,6 +157,7 @@ func init() {
 		fmt.Printf("%#v\n", c)
 	}
 
+	rand.Seed(time.Now().UnixNano())
 }
 
 func main() {

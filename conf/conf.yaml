@@ -3,6 +3,7 @@ debug: true
 domain: "tld."
 port: 5300
 ttl: 6
+chaos: 50
 srv:
   _http._tcp.be1.tld.:
   - { priority:  5, weight: 500, port: 80, target: A1.tld. }
