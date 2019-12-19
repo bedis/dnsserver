@@ -39,6 +39,7 @@ type conf struct {
 	Chaos int                    `yaml:"chaos"`
 	Srv map[string]SrvRecordList `yaml:"srv"`
 	A map[string]string          `yaml:"A"`
+	CNAME map[string]string      `yaml:"CNAME"`
 }
 
 
@@ -68,6 +69,8 @@ func parseQuery(m *dns.Msg, c *conf) {
 		log.Printf("Query %d for %s\n", m.Id, q.Name)
 		switch q.Qtype {
 		case dns.TypeA:
+			var host string
+
 			// adding some chaos errors
 			if c.Chaos > 0 {
 				if rand.Intn(100 * nbChaosErrors) <= c.Chaos {
@@ -75,17 +78,35 @@ func parseQuery(m *dns.Msg, c *conf) {
 					time.Sleep(10 * time.Second)
 				}
 			}
-			ips := strings.Fields(c.A[q.Name])
+
+			host = q.Name
+
+ CNAME:
+			ips := strings.Fields(c.A[host])
 			log.Printf("IP: %+v\n", ips);
 			if len(ips) > 0 {
 				for _, ip := range ips {
-					rr, err := dns.NewRR(fmt.Sprintf("%s A %s", q.Name, ip))
+					rr, err := dns.NewRR(fmt.Sprintf("%s A %s", host, ip))
 					rr.Header().Ttl = c.Ttl
 					if err == nil {
 						m.Answer = append(m.Answer, rr)
 					}
 				}
-			} else {
+
+				goto out
+			}
+
+			// check if a CNAME is available for such hostname
+			host = c.CNAME[q.Name]
+			if len(host) > 0 {
+				rr, _ := dns.NewRR(fmt.Sprintf("%s CNAME %s", q.Name, host))
+				rr.Header().Ttl = c.Ttl
+				m.Answer = append(m.Answer, rr)
+
+				goto CNAME
+			}
+
+			if len(m.Answer) == 0 {
 				m.SetRcode(m, dns.RcodeNameError)
 				goto out
 			}
