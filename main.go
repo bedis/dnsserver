@@ -37,6 +37,7 @@ type conf struct {
 	Port int                     `yaml:"port"`
 	Ttl uint32                   `yaml:"ttl"`
 	Chaos int                    `yaml:"chaos"`
+	SendAdditionalRecords bool   `yaml:"send_additional_records"`
 	Srv map[string]SrvRecordList `yaml:"srv"`
 	A map[string]string          `yaml:"A"`
 	CNAME map[string]string      `yaml:"CNAME"`
@@ -123,10 +124,12 @@ func parseQuery(m *dns.Msg, c *conf) {
 					if err == nil {
 						m.Answer = append(m.Answer, rr)
 					}
-					ip := c.A[srv.Target]
-					rr, err = dns.NewRR(fmt.Sprintf("%s A %s", srv.Target, ip))
-					if err == nil {
-						m.Extra = append(m.Extra, rr)
+					if (c.SendAdditionalRecords) {
+						ip := c.A[srv.Target]
+						rr, err = dns.NewRR(fmt.Sprintf("%s A %s", srv.Target, ip))
+						if err == nil {
+							m.Extra = append(m.Extra, rr)
+						}
 					}
 				}
 			}
