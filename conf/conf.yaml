@@ -8,6 +8,9 @@ send_additional_records: true
 srv:
   _http._tcp.be1.tld.:
   - { priority:  5, weight: 500, port: 80, target: A1.tld. }
+  - { priority:  5, weight: 500, port: 81, target: A1.tld. }
+  - { priority:  5, weight: 500, port: 82, target: A1.tld. }
+  - { priority:  5, weight: 500, port: 80, target: A1.tld. }
   - { priority:  5, weight: 500, port: 80, target: A2.tld. }
   - { priority:  5, weight: 500, port: 80, target: A3.tld. }
   - { priority:  5, weight: 500, port: 80, target: A4.tld. }
@@ -15,16 +18,16 @@ srv:
   - { priority:  5, weight: 500, port: 80, target: A6.tld. }
   - { priority:  5, weight: 500, port: 80, target: A7.tld. }
   - { priority:  5, weight: 500, port: 80, target: A8.tld. }
-  _http._tcp.be2.tld.:
-  - { priority:  5, weight: 500, port: 80, target: A1.tld. }
-  - { priority:  5, weight: 500, port: 80, target: A2.tld. }
-  - { priority:  5, weight: 500, port: 80, target: A3.tld. }
-  - { priority:  5, weight: 500, port: 80, target: A4.tld. }
   _http._tcp.be3.tld.:
   - { priority:  5, weight: 500, port: 80, target: A1.tld. }
   - { priority:  5, weight: 500, port: 80, target: A2.tld. }
   - { priority:  5, weight: 500, port: 80, target: A3.tld. }
   - { priority:  5, weight: 500, port: 80, target: A4.tld. }
+  _http._tcp.be2.tld.:
+  - { priority:  5, weight: 500, port: 80, target: A1.tld. }
+  - { priority:  5, weight: 500, port: 80, target: A2.tld. }
+  - { priority:  5, weight: 500, port: 85, target: A3.tld. }
+  - { priority:  5, weight: 500, port: 86, target: A3.tld. }
 A:
   A1.tld.: 192.168.0.1
   A2.tld.: 192.168.0.2
@@ -34,4 +37,5 @@ A:
   A6.tld.: 192.168.0.6
   A7.tld.: 192.168.0.7
   A8.tld.: 192.168.0.8
+  A9.tld.: 192.168.0.9
 
