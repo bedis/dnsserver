@@ -2,6 +2,9 @@
 udp: true
 tcp: true
 debug: true
+SendAdditionalRecords: all
+#SendAdditionalRecords: compacted
+#SendAdditionalRecords: none
 domain: "tld."
 port: 5300
 ttl: 6

@@ -39,7 +39,7 @@ type conf struct {
 	Port int                     `yaml:"port"`
 	Ttl uint32                   `yaml:"ttl"`
 	Chaos int                    `yaml:"chaos"`
-	SendAdditionalRecords bool   `yaml:"send_additional_records"`
+	SendAdditionalRecords string `yaml:"SendAdditionalRecords" default:"none"`
 	Srv map[string]SrvRecordList `yaml:"srv"`
 	A map[string]string          `yaml:"A"`
 	CNAME map[string]string      `yaml:"CNAME"`
@@ -114,10 +114,16 @@ func parseQuery(m *dns.Msg, c *conf) {
 				goto out
 			}
 		case dns.TypeSRV:
+			var tmpADD map[string]string
+
 			srvs := c.Srv[q.Name]
 			if len(srvs) < 1 {
 				m.SetRcode(m, dns.RcodeNameError)
 				goto out
+			}
+
+			if (c.SendAdditionalRecords == "compacted") {
+				tmpADD = make(map[string]string)
 			}
 
 			for _, srv := range srvs.Randomize() {
@@ -126,12 +132,22 @@ func parseQuery(m *dns.Msg, c *conf) {
 					if err == nil {
 						m.Answer = append(m.Answer, rr)
 					}
-					if (c.SendAdditionalRecords) {
-						ip := c.A[srv.Target]
-						rr, err = dns.NewRR(fmt.Sprintf("%s A %s", srv.Target, ip))
-						if err == nil {
-							m.Extra = append(m.Extra, rr)
+
+					if (c.SendAdditionalRecords == "none") {
+						continue
+					}
+
+					ip := c.A[srv.Target]
+					rr, err = dns.NewRR(fmt.Sprintf("%s A %s", srv.Target, ip))
+					if err == nil {
+						if (c.SendAdditionalRecords == "compacted") {
+							var ok bool
+							if _, ok = tmpADD[srv.Target]; ok {
+								continue
+							}
+							tmpADD[srv.Target] = ip
 						}
+						m.Extra = append(m.Extra, rr)
 					}
 				}
 			}
@@ -201,6 +217,11 @@ func init() {
 
 	if (!c.Udp && !c.Tcp) {
 		log.Fatal("Either udp or tcp must be 'true'")
+	}
+
+	// force value of SendAdditionalRecords to "none" when not known
+	if ((c.SendAdditionalRecords != "none") && (c.SendAdditionalRecords != "compacted") && (c.SendAdditionalRecords != "all")) {
+		c.SendAdditionalRecords = "none"
 	}
 
 	rand.Seed(time.Now().UnixNano())
