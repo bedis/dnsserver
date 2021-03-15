@@ -1,4 +1,6 @@
 --- 
+udp: true
+tcp: true
 debug: true
 domain: "tld."
 port: 5300

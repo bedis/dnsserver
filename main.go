@@ -32,6 +32,8 @@ type srvRecord struct {
 type SrvRecordList []srvRecord
 
 type conf struct {
+	Udp bool                     `yaml:"udp" default:"true"`
+	Tcp bool                     `yaml:"tcp" default:"true"`
 	Debug bool                   `yaml:"debug"`
 	Domain string                `yaml:"domain"`
 	Port int                     `yaml:"port"`
@@ -197,24 +199,44 @@ func init() {
 		fmt.Printf("%#v\n", c)
 	}
 
+	if (!c.Udp && !c.Tcp) {
+		log.Fatal("Either udp or tcp must be 'true'")
+	}
+
 	rand.Seed(time.Now().UnixNano())
 }
 
 func main() {
+        var err error
+
 	// attach request handler func
 	dns.HandleFunc(c.Domain, func(w dns.ResponseWriter, r *dns.Msg) {handleDnsRequest(w, r, &c)} )
 
-	// start server
-	server := &dns.Server{Addr: ":" + strconv.Itoa(c.Port), Net: "udp"}
-	log.Printf("Starting at %d\n", c.Port)
-	var err error
-	go func() {
-		err = server.ListenAndServe()
-	}()
-	defer server.Shutdown()
-	if err != nil {
-		log.Fatalf("Failed to start server: %s\n ", err.Error())
+	// start UDP server
+	if (c.Udp) {
+		serverUDP := &dns.Server{Addr: ":" + strconv.Itoa(c.Port), Net: "udp"}
+		log.Printf("Starting at UDP/%d\n", c.Port)
+		go func() {
+			err = serverUDP.ListenAndServe()
+		}()
+		defer serverUDP.Shutdown()
+		if err != nil {
+			log.Fatalf("Failed to start UDP server: %s\n ", err.Error())
+		}
 	}
+
+       // start TCP server
+       if (c.Tcp) {
+               serverTCP := &dns.Server{Addr: ":" + strconv.Itoa(c.Port), Net: "tcp"}
+               log.Printf("Starting at TCP/%d\n", c.Port)
+               go func() {
+                       err = serverTCP.ListenAndServe()
+               }()
+               defer serverTCP.Shutdown()
+               if err != nil {
+                       log.Fatalf("Failed to start TCP server: %s\n ", err.Error())
+               }
+       }
 
 	watcher, err := fsnotify.NewWatcher()
 	if err != nil {
