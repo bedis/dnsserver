@@ -154,14 +154,27 @@ func handleDnsRequest(w dns.ResponseWriter, r *dns.Msg, c *conf) {
 	w.WriteMsg(m)
 }
 
+/* reset conf to default values */
+func (c *conf) resetConf() (*conf) {
+	c.Debug = false
+	//c.Domain => can't be changed at runtime
+	//c.Port   => can't be changed at runtime
+	c.Srv = make(map[string]SrvRecordList)
+	c.A = make(map[string]string)
+
+	return c
+}
+
 func (c *conf) loadConf() (*conf) {
+	var tmp conf
+
 	// load conf file
 	c.Ttl = 0
 	yamlFile, err := ioutil.ReadFile("conf/conf.yaml")
 	if err != nil {
 		log.Printf("yamlFile.Get err   #%v ", err)
 	}
-	err = yaml.Unmarshal(yamlFile, c)
+	err = yaml.Unmarshal(yamlFile, &tmp)
 	if err != nil {
 		log.Fatalf("Unmarshal: %v", err)
 	}
@@ -169,6 +182,9 @@ func (c *conf) loadConf() (*conf) {
 	if c.Ttl == 0 {
 		c.Ttl = defaultTtl
 	}
+
+	c.resetConf()
+	yaml.Unmarshal(yamlFile, c)
 
 	return c
 }
