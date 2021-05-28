@@ -42,6 +42,7 @@ type conf struct {
 	SendAdditionalRecords string `yaml:"SendAdditionalRecords" default:"none"`
 	Srv map[string]SrvRecordList `yaml:"srv"`
 	A map[string]string          `yaml:"A"`
+	AAAA map[string]string       `yaml:"AAAA"`
 	CNAME map[string]string      `yaml:"CNAME"`
 }
 
@@ -137,8 +138,13 @@ func parseQuery(m *dns.Msg, c *conf) {
 						continue
 					}
 
-					ip := c.A[srv.Target]
-					rr, err = dns.NewRR(fmt.Sprintf("%s A %s", srv.Target, ip))
+					recordType := "AAAA"
+					ip := c.AAAA[srv.Target]
+					if ip == "" {
+						recordType = "A"
+						ip = c.A[srv.Target]
+					}
+					rr, err = dns.NewRR(fmt.Sprintf("%s %s %s", srv.Target, recordType, ip))
 					if err == nil {
 						if (c.SendAdditionalRecords == "compacted") {
 							var ok bool
@@ -148,6 +154,8 @@ func parseQuery(m *dns.Msg, c *conf) {
 							tmpADD[srv.Target] = ip
 						}
 						m.Extra = append(m.Extra, rr)
+					} else {
+						fmt.Printf("%s\n", err)
 					}
 				}
 			}

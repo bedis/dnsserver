@@ -8,7 +8,7 @@ SendAdditionalRecords: all
 domain: "tld."
 port: 5300
 ttl: 6
-chaos: 50
+chaos: 0
 send_additional_records: true
 srv:
   _http._tcp.be1.tld.:
@@ -23,6 +23,7 @@ srv:
   - { priority:  5, weight: 500, port: 80, target: A6.tld. }
   - { priority:  5, weight: 500, port: 80, target: A7.tld. }
   - { priority:  5, weight: 500, port: 80, target: A8.tld. }
+  - { priority:  5, weight: 500, port: 80, target: v6.tld. }
   _http._tcp.be3.tld.:
   - { priority:  5, weight: 500, port: 80, target: A1.tld. }
   - { priority:  5, weight: 500, port: 80, target: A2.tld. }
@@ -43,4 +44,5 @@ A:
   A7.tld.: 192.168.0.7
   A8.tld.: 192.168.0.8
   A9.tld.: 192.168.0.9
-
+AAAA:
+  v6.tld.: fe80::fc54:ff:feb9:2994
